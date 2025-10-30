@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { URL } from "../utils/api";
+
 interface FormData {
   email: string;
   password: string;
@@ -23,50 +23,47 @@ const ApplicantLogin: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const { email, password } = formData;
+    e.preventDefault();
+    const { email, password } = formData;
 
-  if (!email || !password) {
-    setError("All fields are required.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    const res = await fetch(`${URL}api/token/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        username: email, 
-        password: password,
-      }),
-    });
-    
-
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.detail || "Login failed");
+    if (!email || !password) {
+      setError("All fields are required.");
+      return;
     }
 
-    const data = await res.json();
-    localStorage.setItem("accessToken", data.access);
-    localStorage.setItem("refreshToken", data.refresh);
+    try {
+      setLoading(true);
+      const res = await fetch("/api/token/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          username: email, 
+          password: password,
+        }),
+      });
 
-    setError("");
-    console.log("Login successful");
-    setLoading(false);
-    setError("");
-    // redirect or navigate to dashboard here
-    toast.success("Login successful!");
-    localStorage.setItem("role", "applicant");
-    navigate("/applicantdashboard");
-  } catch  {
-    setError("Failed to login. Please check your credentials.");
-  }
-};
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Login failed");
+      }
 
+      const data = await res.json();
+      localStorage.setItem("accessToken", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+
+      setError("");
+      console.log("Login successful");
+      toast.success("Login successful!");
+      localStorage.setItem("role", "applicant");
+      navigate("/applicantdashboard");
+    } catch {
+      setError("Failed to login. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-blue-50 px-4">

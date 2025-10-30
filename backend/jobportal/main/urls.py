@@ -19,7 +19,6 @@ router = DefaultRouter()
 router.register('jobs', JobViewSet, basename='job')
 router.register('all-jobs', JobListViewSet, basename='all-job')
 
-
 urlpatterns = [
     path('', include(router.urls)),
 
@@ -31,8 +30,7 @@ urlpatterns = [
 
     # Job application endpoints
     path('apply/', JobApplicationCreateView.as_view(), name='job-apply'),
-    path('my-applications/', get_my_applications),
-    path('job-applications/', get_job_applications),
+    path('my-applications/', get_my_applications, name='my-applications'),
+    path('job-applications/', get_job_applications, name='job-applications'),
     path('update-application/<int:pk>/update-status/', UpdateApplicationStatus.as_view(), name='update-status'),
-
 ]

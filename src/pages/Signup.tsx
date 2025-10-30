@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-//import { useNavigate } from "react-router-dom";
-import { URL } from "../utils/api";
 import { Link } from "react-router-dom";
+
 interface FormData {
   name: string;
   email: string;
@@ -17,7 +16,6 @@ const Signup: React.FC = () => {
     password: "",
     confirmpassword: ""
   });
-  //const navigate = useNavigate();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,53 +27,51 @@ const Signup: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const { name, email, password, confirmpassword } = formData;
+    e.preventDefault();
+    const { name, email, password, confirmpassword } = formData;
 
-  if (!name || !email || !password || !confirmpassword) {
-    setError("All fields are required.");
-    return;
-  }
-
-  if (password !== confirmpassword) {
-    setError("Passwords do not match.");
-    return;
-  }
-
-  try {
-    const role = "admin";
-    setLoading(true);
-    const res = await fetch(`${URL}api/register/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, email, password, role }),
-    });
-    
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.detail || "Something went wrong.");
-    } else {
-      setError("");
-      setLoading(false);
-      toast.success("Please check your email to verify your account.");
-      setSuccess("Registration successful! Please check your email to verify your account.");
-      setLoadingVerification(true);
+    if (!name || !email || !password || !confirmpassword) {
+      setError("All fields are required.");
+      return;
     }
-  } catch {
-    setError("Failed to connect to the server.");
-  }
-};
 
-// Function to get button text based on state
-const getButtonText = () => {
-  if (loading) return "Please wait...";
-  if (loadingVerification) return "Waiting for verification...";
-  return "Create Account";
-};
+    if (password !== confirmpassword) {
+      setError("Passwords do not match.");
+      return;
+    }
 
+    try {
+      setLoading(true);
+      const res = await fetch("/api/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+      
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.detail || "Something went wrong.");
+      } else {
+        setError("");
+        setSuccess("Registration successful! Please check your email to verify your account.");
+        setLoadingVerification(true);
+        toast.success("Please check your email to verify your account.");
+      }
+    } catch {
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getButtonText = () => {
+    if (loading) return "Please wait...";
+    if (loadingVerification) return "Waiting for verification...";
+    return "Create Account";
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-blue-50 px-4">
@@ -84,16 +80,16 @@ const getButtonText = () => {
         className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md"
       >
         <h2 className="text-2xl font-bold text-blue-600 mb-6 text-center">Create Your Account</h2>
-        <Link to="/applicantlogin" className="bg-blue-600 text-white px-4 py-1 rounded">
+        <Link to="/applicantlogin" className="inline-block bg-blue-600 text-white px-4 py-1 rounded mb-3">
           Continue as a Job Seeker
         </Link>
-        <p className="text-gray-400">Sign up now to create, manage, and track your jobs like a pro.</p>
+        <p className="text-gray-400 mb-4">Sign up now to create, manage, and track your jobs like a pro.</p>
 
         {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4 mt-3">{error}</div>
+          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4">{error}</div>
         )}
         {success && (
-          <div className="bg-green-100 text-green-700 text-sm p-2 rounded mb-4 mt-3">{success}</div>
+          <div className="bg-green-100 text-green-700 text-sm p-2 rounded mb-4">{success}</div>
         )}
 
         <div className="mb-4">

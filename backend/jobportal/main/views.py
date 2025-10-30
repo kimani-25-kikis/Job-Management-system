@@ -1,20 +1,20 @@
-from rest_framework import viewsets, status, generics
+# main/views.py
+
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAuthenticated,AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.hashers import make_password
 from .models import Job, JobApplication
 from .serializers import JobSerializer, JobApplicationSerializer, UserSerializer
 from .models import Profile
 from django.core.mail import send_mail
-from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
-from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.core.signing import TimestampSigner, SignatureExpired, BadSignature
@@ -29,7 +29,7 @@ import base64
 from rest_framework.views import APIView
 
 
-# ✅ Function-based view for user profile
+# Function-based view for user profile
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_profile(request):
@@ -38,32 +38,19 @@ def get_user_profile(request):
     return Response(serializer.data)
 
 
-# ✅ Class-based view for job seeker job listings
-class JobListViewSet(viewsets.ModelViewSet):
-    queryset = Job.objects.filter(status='active')
+# Class-based view for job seeker job listings
+class JobListViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Job.objects.filter(status='active').select_related('job_owner')
     serializer_class = JobSerializer
 
-    @action(detail=True, methods=['patch'], url_path='deactivate')
-    def deactivate(self, request, pk=None):
-        try:
-            job = self.get_object()
-            job.status = 'inactive'
-            job.save()
-            return Response({'status': 'Job deactivated successfully'})
-        except Job.DoesNotExist:
-            return Response({'error': 'Job not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-    def perform_create(self, serializer):
-        serializer.save(job_owner=self.request.user)
 
-# ✅ Class-based view for job owner job listings
+# Class-based view for job owner job listings
 class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated]  # Ensure only logged-in users can access
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Return only jobs owned by the logged-in user and that are active
-        return Job.objects.filter(job_owner=self.request.user, status='active')
+        return Job.objects.filter(job_owner=self.request.user, status='active').select_related('job_owner')
 
     @action(detail=True, methods=['patch'], url_path='deactivate')
     def deactivate(self, request, pk=None):
@@ -79,7 +66,7 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer.save(job_owner=self.request.user)
         
 
-# ✅ Standalone function-based view for user registration
+# Standalone function-based view for user registration
 signer = TimestampSigner()
 
 @api_view(['POST'])
@@ -90,7 +77,6 @@ def register_user(request):
         if User.objects.filter(email=data['email']).exists():
             return Response({'detail': 'User already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Encode and sign user data
         payload = json.dumps({
             'email': data['email'],
             'password': data['password'],
@@ -100,10 +86,8 @@ def register_user(request):
         signed_data = signer.sign(payload)
         encoded_data = base64.urlsafe_b64encode(signed_data.encode()).decode()
 
-        activation_link = f"http://10.0.2.15:8000/api/activate/{encoded_data}/"
+        activation_link = f"http://localhost:8000/api/activate/{encoded_data}/"
 
-
-        # Send activation email
         try:
             send_verification_email(data['email'], activation_link)
         except Exception as e:
@@ -116,7 +100,7 @@ def register_user(request):
 
 
 
-#upload profile picture
+# Upload profile picture
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_profile_picture(request):
@@ -148,15 +132,10 @@ def send_verification_email(email, activation_link):
 @permission_classes([AllowAny])
 def activate_user(request, token):
     try:
-        # Unsigned data must match exactly what was signed
-        try:
-            decoded_signed_data = base64.urlsafe_b64decode(token.encode()).decode()
-            unsigned_data = signer.unsign(decoded_signed_data, max_age=86400)
-        except (BadSignature, SignatureExpired, ValueError, base64.binascii.Error):
-            return Response({'detail': 'Invalid or expired activation link.'}, status=status.HTTP_400_BAD_REQUEST)
+        decoded_signed_data = base64.urlsafe_b64decode(token.encode()).decode()
+        unsigned_data = signer.unsign(decoded_signed_data, max_age=86400)
         user_data = json.loads(unsigned_data)
 
-        # Check again to avoid duplicates
         if User.objects.filter(email=user_data['email']).exists():
             return Response({'detail': 'User already activated.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -168,11 +147,9 @@ def activate_user(request, token):
             is_active=True
         )
 
-        # Create profile or any related info
         Profile.objects.create(user=user)
 
-        # Redirect to frontend (optional)
-        return redirect("http://10.0.2.15:5173/signin?verified=true")
+        return redirect("http://localhost:5173/signin?verified=true")
 
     except SignatureExpired:
         return Response({'detail': 'Activation link has expired.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -181,41 +158,62 @@ def activate_user(request, token):
     except Exception as e:
         return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class JobApplicationCreateView(generics.CreateAPIView):
-    queryset = JobApplication.objects.all()
-    serializer_class = JobApplicationSerializer
+class JobApplicationCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=self.request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            print("Serializer errors:", serializer.errors)  # 🔍 Log errors
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        job_id = request.data.get('job')
+        cover_letter = request.data.get('cover_letter')
+        resume = request.FILES.get('resume')
+
+        if not job_id or not cover_letter or not resume:
+            return Response(
+                {"detail": "job, cover_letter, and resume are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            job = Job.objects.get(id=job_id, status='active')
+        except Job.DoesNotExist:
+            return Response(
+                {"detail": "Job not found or not active."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if JobApplication.objects.filter(user=user, job=job).exists():
+            return Response(
+                {"detail": "You have already applied."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        application = JobApplication.objects.create(
+            user=user,
+            job=job,
+            cover_letter=cover_letter,
+            resume=resume
+        )
+
+        serializer = JobApplicationSerializer(application, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
         
 # Function to get applications by user email
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_applications(request):
     user = request.user
-    applications = JobApplication.objects.filter(user=user)
-    serializer = JobApplicationSerializer(applications, many=True)
+    applications = JobApplication.objects.filter(user=user).select_related('job', 'user')
+    serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-#Get job applications owned by job creator
+# Get job applications owned by job creator
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_job_applications(request):
     user = request.user
-    # Get all jobs posted by the current user
     user_jobs = Job.objects.filter(job_owner=user)
-    
-    # Get applications where job is one of the user's jobs
-    applications = JobApplication.objects.filter(job__in=user_jobs)
-
-    serializer = JobApplicationSerializer(applications, many=True)
+    applications = JobApplication.objects.filter(job__in=user_jobs).select_related('job', 'user')
+    serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Update job application status
@@ -235,5 +233,5 @@ class UpdateApplicationStatus(APIView):
 
         job_app.status = new_status
         job_app.save()
-        serializer = JobApplicationSerializer(job_app)
+        serializer = JobApplicationSerializer(job_app, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
