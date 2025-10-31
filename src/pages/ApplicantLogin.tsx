@@ -1,6 +1,135 @@
+// import React, { useState } from "react";
+// import toast from "react-hot-toast";
+// import { useNavigate } from "react-router-dom";
+
+// interface FormData {
+//   email: string;
+//   password: string;
+// }
+
+// const ApplicantLogin: React.FC = () => {
+//   const [formData, setFormData] = useState<FormData>({
+//     email: "",
+//     password: "",
+//   });
+//   const navigate = useNavigate();
+
+//   const [error, setError] = useState("");
+//   const [loading, setLoading] = useState(false);
+
+//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const { name, value } = e.target;
+//     setFormData(prev => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     const { email, password } = formData;
+
+//     if (!email || !password) {
+//       setError("All fields are required.");
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       const res = await fetch("/api/token/", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ 
+//           username: email, 
+//           password: password,
+//         }),
+//       });
+
+//       if (!res.ok) {
+//         const data = await res.json();
+//         throw new Error(data.detail || "Login failed");
+//       }
+
+//       const data = await res.json();
+//       localStorage.setItem("accessToken", data.access);
+//       localStorage.setItem("refreshToken", data.refresh);
+
+//       setError("");
+//       console.log("Login successful");
+//       toast.success("Login successful!");
+//       localStorage.setItem("role", "applicant");
+//       navigate("/applicantdashboard");
+//     } catch {
+//       setError("Failed to login. Please check your credentials.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="flex items-center justify-center min-h-screen bg-blue-50 px-4">
+//       <form
+//         onSubmit={handleSubmit}
+//         className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md"
+//       >
+//         <h2 className="text-2xl font-bold text-green-700 mb-6 text-center">Welcome back,</h2>
+//         <p className="text-gray-400">Continue exploring job opportunities</p>
+
+//         {error && (
+//           <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4 mt-3">{error}</div>
+//         )}
+
+//         <div className="mb-4">
+//           <label className="block text-sm font-medium text-green-700 mb-1" htmlFor="email">
+//             Email
+//           </label>
+//           <input
+//             className="w-full border border-green-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+//             type="email"
+//             name="email"
+//             id="email"
+//             value={formData.email}
+//             onChange={handleChange}
+//             placeholder="example@email.com"
+//           />
+//         </div>
+
+//         <div className="mb-6">
+//           <label className="block text-sm font-medium text-green-700 mb-1" htmlFor="password">
+//             Password
+//           </label>
+//           <input
+//             className="w-full border border-green-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+//             type="password"
+//             name="password"
+//             id="password"
+//             value={formData.password}
+//             onChange={handleChange}
+//             placeholder="Enter your password"
+//           />
+//         </div>
+
+//         <button
+//           type="submit"
+//           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+//         >
+//           {loading ? "Please wait..." : "Sign In"}
+//         </button>
+
+//         <p className="text-center text-sm text-gray-600 mt-4">
+//           Don't have an account? <a href="/applicantsignup" className="text-green-600 hover:underline">Sign Up</a>
+//         </p>
+//       </form>
+//     </div>
+//   );
+// };
+
+// export default ApplicantLogin;
+
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+
+
 
 interface FormData {
   email: string;
@@ -19,7 +148,7 @@ const ApplicantLogin: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,13 +164,8 @@ const ApplicantLogin: React.FC = () => {
       setLoading(true);
       const res = await fetch("/api/token/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          username: email, 
-          password: password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: email, password }),
       });
 
       if (!res.ok) {
@@ -52,11 +176,10 @@ const ApplicantLogin: React.FC = () => {
       const data = await res.json();
       localStorage.setItem("accessToken", data.access);
       localStorage.setItem("refreshToken", data.refresh);
+      localStorage.setItem("role", "applicant");   // <-- **IMPORTANT**
 
       setError("");
-      console.log("Login successful");
       toast.success("Login successful!");
-      localStorage.setItem("role", "applicant");
       navigate("/applicantdashboard");
     } catch {
       setError("Failed to login. Please check your credentials.");
@@ -71,15 +194,22 @@ const ApplicantLogin: React.FC = () => {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold text-green-700 mb-6 text-center">Welcome back,</h2>
+        <h2 className="text-2xl font-bold text-green-700 mb-6 text-center">
+          Welcome back,
+        </h2>
         <p className="text-gray-400">Continue exploring job opportunities</p>
 
         {error && (
-          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4 mt-3">{error}</div>
+          <div className="bg-red-100 text-red-700 text-sm p-2 rounded mb-4 mt-3">
+            {error}
+          </div>
         )}
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-green-700 mb-1" htmlFor="email">
+          <label
+            className="block text-sm font-medium text-green-700 mb-1"
+            htmlFor="email"
+          >
             Email
           </label>
           <input
@@ -94,7 +224,10 @@ const ApplicantLogin: React.FC = () => {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-green-700 mb-1" htmlFor="password">
+          <label
+            className="block text-sm font-medium text-green-700 mb-1"
+            htmlFor="password"
+          >
             Password
           </label>
           <input
@@ -110,13 +243,17 @@ const ApplicantLogin: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+          disabled={loading}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50"
         >
           {loading ? "Please wait..." : "Sign In"}
         </button>
 
         <p className="text-center text-sm text-gray-600 mt-4">
-          Don't have an account? <a href="/applicantsignup" className="text-green-600 hover:underline">Sign Up</a>
+          Don't have an account?{" "}
+          <a href="/applicantsignup" className="text-green-600 hover:underline">
+            Sign Up
+          </a>
         </p>
       </form>
     </div>

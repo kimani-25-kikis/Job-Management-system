@@ -16,6 +16,8 @@ import ApplicantDashboard from "./pages/ApplicantDashboard";
 import ApplicantJobDetail from "./pages/ApplicantJobDetail";
 import JobApplication from "./pages/JobApplication";
 import ApplicantProfile from "./pages/ApplicantProfile";
+// @ts-ignore
+import ActivationHandler from "./pages/ActivationHandler";
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -42,6 +44,7 @@ const AppContent: React.FC = () => {
         <Route path="/applicantjobdetail/:id" element={<ApplicantJobDetail />} />
         <Route path="/application" element={<JobApplication />} />
         <Route path="/applicantprofile" element={<ApplicantProfile />} />
+        <Route path="/activate" element={<ActivationHandler />} />
         
       </Routes>
       <Toaster position="top-right" />

@@ -32,6 +32,7 @@ class Job(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    is_applicant = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
