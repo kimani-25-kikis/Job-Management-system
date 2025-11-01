@@ -1,5 +1,5 @@
 // src/pages/signup.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -23,12 +23,27 @@ const Signup: React.FC = () => {
   const [loadingVerification, setLoadingVerification] = useState(false);
   const navigate = useNavigate();
 
+  // ← ADD THIS useEffect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const verified = urlParams.get("verified");
+    const role = urlParams.get("role");
+
+    if (verified === "true" && role === "employer") {
+      localStorage.setItem("role", "employer");
+      toast.success("Account activated! Please sign in as employer.");
+      window.history.replaceState({}, "", "/signup");
+    } else if (verified === "false") {
+      toast.error("Activation failed. Please try again.");
+    }
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, password, confirmpassword } = formData;
 
@@ -50,7 +65,7 @@ const Signup: React.FC = () => {
           name,
           email,
           password,
-          role: "employer", // ← Tells backend this is an employer
+          role: "employer",
         }),
       });
 
@@ -65,10 +80,9 @@ const Signup: React.FC = () => {
       setLoadingVerification(true);
       toast.success("Verification email sent!");
 
-      localStorage.setItem("role", "employer"); // ← Early role save
+      localStorage.setItem("role", "employer"); // ← Keep this too
 
       setTimeout(() => navigate("/signin"), 2000);
-
     } catch (err) {
       console.error("Signup error:", err);
       setError("Failed to connect to server. Is backend running?");
