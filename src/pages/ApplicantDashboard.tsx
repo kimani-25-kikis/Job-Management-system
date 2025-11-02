@@ -18,6 +18,16 @@ const ApplicantDashboard: React.FC = () => {
   const token = localStorage.getItem("accessToken");
   const role = localStorage.getItem("role");
 
+  // LOGOUT FUNCTION — CLEARS EVERYTHING
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("role"); // CRITICAL
+
+    toast.success("Logged out successfully");
+    navigate("/applicantlogin");
+  };
+
   // ROLE GUARD + AUTH + FETCH JOBS
   useEffect(() => {
     if (!token) {
@@ -36,12 +46,6 @@ const ApplicantDashboard: React.FC = () => {
       .then((res) => setJobs(res.data))
       .catch(() => toast.error("Failed to fetch jobs"));
   }, [token, role, navigate]);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    toast.success("Logged out successfully!");
-    navigate("/applicantlogin");
-  };
 
   // Extract filters
   const locations = Array.from(new Set(jobs.map((job) => job.location)));
@@ -132,7 +136,6 @@ const ApplicantDashboard: React.FC = () => {
               <ApplicantJobCard
                 key={job.id}
                 job={job}
-                // Applicants should NOT see Deactivate — pass a no-op to satisfy the prop type
                 onDeactivate={() => {}}
               />
             ))

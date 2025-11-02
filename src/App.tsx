@@ -1,10 +1,12 @@
+// src/App.tsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
+
 import JobList from "./pages/JobList";
 import CreateJob from "./pages/CreateJob";
 import EditJob from "./pages/EditJob";
 import JobDetail from "./pages/JobDetail";
-import { Toaster } from 'react-hot-toast';
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import Navbar from "./components/NavBar";
@@ -16,42 +18,51 @@ import ApplicantDashboard from "./pages/ApplicantDashboard";
 import ApplicantJobDetail from "./pages/ApplicantJobDetail";
 import JobApplication from "./pages/JobApplication";
 import ApplicantProfile from "./pages/ApplicantProfile";
-
-// @ts-ignore
 import ActivationHandler from "./pages/ActivationHandler";
-import Home from "./pages/Home";
-
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const hideNavbar = location.pathname === "/signup" || location.pathname === "/signin" || location.pathname === "/applicantlogin" || location.pathname === "/applicantsignup";
-  const isApplicantDashboard = localStorage.getItem("role") === "applicant";
+  const hideNavbar = [
+    "/signup",
+    "/signin",
+    "/applicantlogin",
+    "/applicantsignup",
+    "/activate"
+  ].includes(location.pathname);
+
+  const role = localStorage.getItem("role");
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="min-h-screen bg-gray-100">
       {!hideNavbar && (
-      isApplicantDashboard ? <ApplicantNavbar /> : <Navbar />
-    )}
-      
+        role === "applicant" ? <ApplicantNavbar /> : <Navbar />
+      )}
+
       <Routes>
-        <Route path="/" element={<JobList />} />
+        {/* START HERE */}
+        <Route path="/" element={<Signin />} />
+
+        {/* EMPLOYER DASHBOARD */}
+        <Route path="/jobs" element={<JobList />} />
         <Route path="/create" element={<CreateJob />} />
         <Route path="/edit/:id" element={<EditJob />} />
         <Route path="/job/:id" element={<JobDetail />} />
+        <Route path="/account" element={<UserAccount />} />
+
+        {/* AUTH */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
-        <Route path="/account" element={<UserAccount />} />
+        <Route path="/activate" element={<ActivationHandler />} />
+
+        {/* APPLICANT */}
         <Route path="/applicantlogin" element={<ApplicantLogin />} />
         <Route path="/applicantsignup" element={<ApplicantSignup />} />
         <Route path="/applicantdashboard" element={<ApplicantDashboard />} />
-        
         <Route path="/applicantjobdetail/:id" element={<ApplicantJobDetail />} />
         <Route path="/application" element={<JobApplication />} />
         <Route path="/applicantprofile" element={<ApplicantProfile />} />
-        <Route path="/activate" element={<ActivationHandler />} />
-        <Route path="/" element={<Home />} />
-        
       </Routes>
+
       <Toaster position="top-right" />
     </div>
   );

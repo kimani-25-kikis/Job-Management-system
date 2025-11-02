@@ -15,6 +15,14 @@ const ApplicantLogin: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const savedRole = localStorage.getItem("role");
+    if (savedRole === "employer") {
+      toast.error("Employers must use the Employer login.");
+      navigate("/signin");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const verified = urlParams.get("verified");
     const role = urlParams.get("role");
@@ -25,6 +33,7 @@ const ApplicantLogin: React.FC = () => {
       window.history.replaceState({}, "", "/applicantlogin");
     } else if (verified === "false") {
       toast.error("Activation failed.");
+      window.history.replaceState({}, "", "/applicantlogin");
     }
   }, []);
 
@@ -37,7 +46,7 @@ const ApplicantLogin: React.FC = () => {
     const { email, password } = formData;
 
     if (!email || !password) {
-      setError("All fields required.");
+      setError("Email and password required.");
       return;
     }
 
@@ -59,15 +68,22 @@ const ApplicantLogin: React.FC = () => {
 
       const savedRole = localStorage.getItem("role");
 
-      if (savedRole === "applicant") {
-        navigate("/applicantdashboard");
-      } else if (savedRole === "employer") {
-        navigate("/");
-      } else {
-        setError("Invalid role. Please activate your account.");
+      if (!savedRole) {
+        setError("Please activate your account first.");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        return;
+      }
+
+      if (savedRole !== "applicant") {
+        setError("Invalid role. Use the correct login page.");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        return;
       }
 
       toast.success("Welcome back, Job Seeker!");
+      navigate("/applicantdashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {
